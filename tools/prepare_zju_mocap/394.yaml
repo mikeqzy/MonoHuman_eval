@@ -1,5 +1,5 @@
 dataset:
-  zju_mocap_path: /mnt/lustressd/yuzhengming/monohuman/data/zju_mocap/394/raw
+  zju_mocap_path: /cluster/scratch/shawang/Datasets/ZJU-MoCap
   subject: '394'
   sex: 'neutral'
 

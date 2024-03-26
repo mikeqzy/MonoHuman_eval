@@ -23,7 +23,8 @@ train:
   batch_size: 1
   shuffle: True
   drop_last: False
-  maxiter: 800000
+  maxiter: 400000
+#  maxiter: 800000
   lr: 0.0005  # 5e-4
   lr_mweight_vol_decoder: 0.000005 # 5e-5
   lr_pose_decoder: 0.00005        # 5e-5
@@ -68,6 +69,10 @@ tpose:
 
 text:
   dataset_module: 'core.data.monohuman.text'
+  dataset: 'zju_387_test'
+
+test:
+  dataset_module: 'core.data.monohuman.test'
   dataset: 'zju_387_test'
 
 bgcolor: [0., 0., 0.]

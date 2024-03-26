@@ -14,14 +14,17 @@ class DatasetArgs(object):
                     "ray_shoot_mode": cfg.train.ray_shoot_mode,
                     "index_a": cfg.index_a,
                     "index_b": cfg.index_b,
+                    "views": ['01'],
                 },
                 f"zju_{sub}_test": {
-                    "dataset_path": f"dataset/zju_mocap/{sub}",
+                    "dataset_path": f"dataset/zju_mocap_full/{sub}",
                     "keyfilter": cfg.test_keyfilter,
                     "ray_shoot_mode": 'image',
                     "src_type": 'zju_mocap',
                     "index_a": cfg.index_a,
                     "index_b": cfg.index_b,
+                    # "views": cfg.views,
+                    # "skip": cfg.skip,
                 },
             })
 

@@ -69,6 +69,10 @@ text:
   dataset_module: 'core.data.monohuman.text'
   dataset: 'zju_392_test'
 
+test:
+  dataset_module: 'core.data.monohuman.test'
+  dataset: 'zju_392_test'
+
 bgcolor: [0., 0., 0.]
 resize_img_scale: 0.5
 

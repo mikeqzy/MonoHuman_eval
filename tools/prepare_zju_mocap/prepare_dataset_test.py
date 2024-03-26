@@ -1,5 +1,6 @@
 import os
 import sys
+import glob
 
 from shutil import copyfile
 
@@ -21,11 +22,20 @@ from absl import flags
 FLAGS = flags.FLAGS
 
 flags.DEFINE_string('cfg',
-                    '387.yaml',
+                    '387_test.yaml',
                     'the path of config file')
+flags.DEFINE_string('seqid',
+                    '0',
+                    'ood pose sequence name')
 
 MODEL_DIR = '../../third_parties/smpl/models'
 
+
+seq_dict = {
+    '0': 'gBR_sBM_cAll_d04_mBR1_ch05',
+    '1': 'gBR_sBM_cAll_d04_mBR1_ch06',
+    '2': 'MPI_Limits_03099_op8_poses'
+}
 
 def parse_config():
     config = None
@@ -66,13 +76,16 @@ def main(argv):
     subject = cfg['dataset']['subject']
     sex = cfg['dataset']['sex']
     max_frames = cfg['max_frames']
+    seq_name = seq_dict[FLAGS.seqid]
 
     dataset_dir = cfg['dataset']['zju_mocap_path']
+    # dataset_dir = '../../../../data/ZJUMoCap'
     subject_dir = os.path.join(dataset_dir, f"CoreView_{subject}")
-    smpl_params_dir = os.path.join(subject_dir, "new_params")
+    smpl_params_dir = os.path.join(subject_dir, f'{seq_name}_new_params_humannerf')
 
     # select_view = cfg['training_view']
-    cam_names = [f'{cam_name:02d}' for cam_name in range(1, 24)]
+    # cam_names = [f'{cam_name:02d}' for cam_name in range(1, 24)]
+    cam_names = ['01']
 
     anno_path = os.path.join(subject_dir, 'annots.npy')
     annots = np.load(anno_path, allow_pickle=True).item()
@@ -100,49 +113,25 @@ def main(argv):
             'distortions': D
         }
 
-        # load image paths
-        img_path_frames_views = annots['ims']
-        img_paths = np.array([
-            np.array(multi_view_paths['ims'])[cam_idx] \
-                for multi_view_paths in img_path_frames_views
-        ])
-        if max_frames > 0:
-            img_paths = img_paths[:max_frames]
-
         # output_path = os.path.join(cfg['output']['dir'],
         #                            subject if 'name' not in cfg['output'].keys() else cfg['output']['name'])
         output_path = os.path.join('../../dataset/zju_mocap_full',
-                                   subject if 'name' not in cfg['output'].keys() else cfg['output']['name'])
+                                   subject if 'name' not in cfg['output'].keys() else cfg['output']['name'], seq_name)
         os.makedirs(output_path, exist_ok=True)
-        out_img_dir  = prepare_dir(output_path, f'images/{cam_name}')
-        out_mask_dir = prepare_dir(output_path, f'masks/{cam_name}')
 
         # copy config file
         copyfile(FLAGS.cfg, os.path.join(output_path, 'config.yaml'))
 
         smpl_model = SMPL(sex=sex, model_dir=MODEL_DIR)
+        smpl_paths = sorted(glob.glob(os.path.join(smpl_params_dir, '*.npy')))
 
         mesh_infos = {}
         all_betas = []
-        for idx, ipath in enumerate(tqdm(img_paths)):
-            out_name = 'frame_{:06d}'.format(idx)
-
-            img_path = os.path.join(subject_dir, ipath)
-
-            # load image
-            img = np.array(load_image(img_path))
-
-            if subject in ['313', '315']:
-                _, image_basename, _ = split_path(img_path)
-                start = image_basename.find(')_')
-                smpl_idx = int(image_basename[start+2: start+6])
-            else:
-                smpl_idx = idx
+        for idx_frame, smpl_path in enumerate(tqdm(smpl_paths)):
+            out_name = 'frame_{:06d}'.format(idx_frame)
 
             # load smpl parameters
-            smpl_params = np.load(
-                os.path.join(smpl_params_dir, f"{smpl_idx}.npy"),
-                allow_pickle=True).item()
+            smpl_params = np.load(smpl_path, allow_pickle=True).item()
 
             betas = smpl_params['shapes'][0] #(10,)
             poses = smpl_params['poses'][0]  #(72,)
@@ -163,15 +152,6 @@ def main(argv):
                 'joints': joints,
                 'tpose_joints': tpose_joints
             }
-
-            # load and write mask
-            mask = get_mask(subject_dir, ipath)
-            save_image(to_3ch_image(mask),
-                       os.path.join(out_mask_dir, out_name+'.png'))
-
-            # write image
-            out_image_path = os.path.join(out_img_dir, '{}.png'.format(out_name))
-            save_image(img, out_image_path)
 
     # write camera infos
     with open(os.path.join(output_path, 'cameras.pkl'), 'wb') as f:   

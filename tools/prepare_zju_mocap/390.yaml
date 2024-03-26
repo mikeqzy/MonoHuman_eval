@@ -1,5 +1,5 @@
 dataset:
-  zju_mocap_path: ../../data/dataset/zjumocap
+  zju_mocap_path: /cluster/scratch/shawang/Datasets/ZJU-MoCap
   subject: '390'
   sex: 'neutral'
 

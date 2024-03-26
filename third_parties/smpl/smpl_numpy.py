@@ -7,7 +7,7 @@ from cv2 import Rodrigues as rodrigues
 
 MALE_PATH    = "basicmodel_m_lbs_10_207_0_v1.0.0.pkl"
 FEMALE_PATH  = "basicModel_f_lbs_10_207_0_v1.0.0.pkl"
-NEUTRAL_PATH = "basicModel_neutral_lbs_10_207_0_v1.0.0.pkl"
+NEUTRAL_PATH = "model.pkl"
 
 
 class SMPL():
@@ -26,7 +26,7 @@ class SMPL():
         self.weights = smpl_model['weights']
         self.posedirs = smpl_model['posedirs']
         self.v_template = smpl_model['v_template']
-        self.shapedirs = np.array(smpl_model['shapedirs'])
+        self.shapedirs = np.array(smpl_model['shapedirs'])[...,:10]
         self.faces = smpl_model['f'].astype('int32')
         self.kintree_table = smpl_model['kintree_table'].astype('int64')
 

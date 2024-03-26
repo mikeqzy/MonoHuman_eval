@@ -58,8 +58,8 @@ class ImageWriter():
               colored(self.image_dir, 'cyan'))
         
         # remove image dir if it exists
-        if os.path.exists(self.image_dir):
-            shutil.rmtree(self.image_dir)
+        # if os.path.exists(self.image_dir):
+        #     shutil.rmtree(self.image_dir)
         
         os.makedirs(self.image_dir, exist_ok=True)
         self.frame_idx = -1

@@ -31,6 +31,7 @@ def get_cfg_defaults():
 
 def parse_cfg(cfg):
     cfg.logdir = os.path.join('experiments', cfg.category, cfg.task, cfg.subject, cfg.experiment)
+    # cfg.logdir = os.path.join('experiments-pose', cfg.category, cfg.task, cfg.subject, cfg.experiment)
 
 
 def make_cfg(args):
@@ -52,6 +53,8 @@ parser.add_argument("--pre_path", required=False, type=str)
 parser.add_argument("--masks_path", required=False, type=str)
 parser.add_argument("--iter", required=False, type=str)
 parser.add_argument("--id", required=False, type=str)
+parser.add_argument("--seqid", required=False, type=str)
+parser.add_argument("--views", required=False, nargs='+', default=[])
 parser.add_argument("opts", default=None, nargs=argparse.REMAINDER)
 args = parser.parse_args()
 

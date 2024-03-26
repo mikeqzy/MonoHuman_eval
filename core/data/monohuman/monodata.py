@@ -55,6 +55,7 @@ class Dataset(torch.utils.data.Dataset):
             bgcolor=None,
             ray_shoot_mode='image',
             skip=1,
+            views=('1',),
             **_):
 
         print('[Dataset Path]', dataset_path) 
@@ -78,13 +79,19 @@ class Dataset(torch.utils.data.Dataset):
 
 
         self.cameras = self.load_train_cameras()
+        self.train_cam = '01'
+        self.cam_names = views
+
         self.mesh_infos = self.load_train_mesh_infos()
 
         self.framelist = self.load_train_frames()
 
         ## for training
-        self.framelist = self.framelist[:-(len(self.framelist) // 5)]
+        # self.framelist = self.framelist[:-(len(self.framelist) // 5)]
+        print(f"SKIP: {skip}")
+        print(f"BEFORE SKIP: {len(self.framelist)}")
         self.framelist = self.framelist[::skip]
+        print(f"AFTER SKIP: {len(self.framelist)}")
         print('test--movement set--')
         if maxframes > 0:
             self.framelist = self.framelist[:maxframes]
@@ -117,15 +124,13 @@ class Dataset(torch.utils.data.Dataset):
         for in_idx, in_name in zip(self.in_index, self.in_frame_name):
             cameras = self.cameras
 
-            assert in_name in cameras
-
-            K_ = cameras[in_name]['intrinsics'].copy()
+            K_ = cameras[self.train_cam]['intrinsics'].copy()
             K_[:2] *= cfg.resize_img_scale
 
             in_skel_info = self.query_dst_skeleton(in_name)
             pose_ = in_skel_info['poses']
             tpose_joints_ = in_skel_info['dst_tpose_joints']
-            E_ = cameras[in_name]['extrinsics']
+            E_ = cameras[self.train_cam]['extrinsics']
             E_ = apply_global_tfm_to_camera(
                     E=E_,
                     Rh=in_skel_info['Rh'],
@@ -149,9 +154,9 @@ class Dataset(torch.utils.data.Dataset):
             self.in_dst_Rs.append(dst_Rs_)
             self.in_dst_Ts.append(dst_Ts_)
 
-        img_a, _ = self.load_image(frame_name_a, bgcolor)
+        img_a, _ = self.load_image(self.train_cam, frame_name_a, bgcolor)
         img_a = (img_a / 255.).astype('float32')
-        img_b, _ = self.load_image(frame_name_b, bgcolor)
+        img_b, _ = self.load_image(self.train_cam, frame_name_b, bgcolor)
         img_b = (img_b / 255.).astype('float32')
         self.src_img = np.array([img_a, img_b])
 
@@ -190,7 +195,7 @@ class Dataset(torch.utils.data.Dataset):
         return mesh_infos
 
     def load_train_frames(self):
-        img_paths = list_files(os.path.join(self.dataset_path, 'images'),
+        img_paths = list_files(os.path.join(self.dataset_path, 'images', self.train_cam,),
                             exts=['.png'])
         return [split_path(ipath)[1] for ipath in img_paths]
     
@@ -321,14 +326,15 @@ class Dataset(torch.utils.data.Dataset):
                 inter_mask[y_min:y_max, x_min:x_max], \
                 np.array([x_min, y_min]), np.array([x_max, y_max])
 
-    def load_image(self, frame_name, bg_color):
+    def load_image(self, cam_name, frame_name, bg_color):
 
-        imagepath = os.path.join(self.image_dir, '{}.png'.format(frame_name))
+        imagepath = os.path.join(self.image_dir, cam_name, '{}.png'.format(frame_name))
         
         orig_img = np.array(load_image(imagepath))
 
         maskpath = os.path.join(self.dataset_path,
                                 'masks',
+                                cam_name,
                                 '{}.png'.format(frame_name))
 
         alpha_mask = np.array(load_image(maskpath))
@@ -387,12 +393,17 @@ class Dataset(torch.utils.data.Dataset):
                 target_patches, patch_masks, patch_div_indices
 
     def __len__(self):
-        return self.get_total_frames()
+        return len(self.cam_names) * self.get_total_frames()
 
     def __getitem__(self, idx):
-        frame_name = self.framelist[idx]
+        cam_idx, frame_idx = idx // self.get_total_frames(), idx % self.get_total_frames()
+
+        cam_name = self.cam_names[cam_idx]
+        frame_name = self.framelist[frame_idx]
         results = {
-            'frame_name': frame_name
+            'cam_name': cam_name,
+            'frame_name': frame_name,
+            'img_name': f'c{cam_name}_f{frame_name[6:]}'
         }
 
 
@@ -406,7 +417,7 @@ class Dataset(torch.utils.data.Dataset):
         else:
             bgcolor = np.array(self.bgcolor, dtype='float32')
 
-        img, alpha = self.load_image(frame_name, bgcolor)
+        img, alpha = self.load_image(cam_name, frame_name, bgcolor)
         img = (img / 255.).astype('float32')
 
         H, W = img.shape[0:2]
@@ -416,11 +427,11 @@ class Dataset(torch.utils.data.Dataset):
         betas = self.mesh_infos[frame_name]['beats']
         _, _, joints = self.smpl_model(poses, betas)
 
-        assert frame_name in self.cameras
-        K = self.cameras[frame_name]['intrinsics'][:3, :3].copy()
+        # assert frame_name in self.cameras
+        K = self.cameras[cam_name]['intrinsics'][:3, :3].copy()
         K[:2] *= cfg.resize_img_scale
         K = K.astype('float32')
-        E = self.cameras[frame_name]['extrinsics']
+        E = self.cameras[cam_name]['extrinsics']
         E = apply_global_tfm_to_camera(
                 E=E, 
                 Rh=dst_skel_info['Rh'],

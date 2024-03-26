@@ -33,13 +33,26 @@ def create_dataset(data_type='train'):
     args['bgcolor'] = None if data_type == 'train' else cfg.bgcolor
 
     if data_type == 'movement':
-        args['skip'] = 1
+        pass
+        # args['skip'] = 1
     if data_type == 'progress':
         total_train_imgs = _get_total_train_imgs(args['dataset_path'])
         args['skip'] = total_train_imgs // 16
         args['maxframes'] = 16
     if data_type in ['freeview', 'tpose']:
         args['skip'] = cfg.render_skip
+    if data_type == 'test':
+        args['seqname'] = cfg.seqname
+        args['views'] = ['01']
+        args['skip'] = 1
+
+
+    views = cfg.get('views', False)
+    if views:
+        args['views'] = views
+    skip = cfg.get('skip', False)
+    if skip:
+        args['skip'] = skip
 
     dataset = _query_dataset(data_type)
     dataset = dataset(**args)

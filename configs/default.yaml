@@ -116,6 +116,10 @@ text:
   drop_last: False
   pose_path: ''
 
+test:
+  batch_size: 1
+  shuffle: False
+  drop_last: False
 
 ##############################################3
 ## Misc
@@ -145,4 +149,5 @@ n_gpus: 1
 show_alpha: False  
 show_truth: False
 rgb_in_dim: 35
-load_net: latest
+#load_net: latest
+load_net: official

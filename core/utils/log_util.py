@@ -12,13 +12,15 @@ class Logger(object):
 
         log_dir = cfg.logdir
         if not cfg.resume and os.path.exists(log_dir):
-            user_input = input(f"log dir \"{log_dir}\" exists. \nRemove? (y/n):")
-            if user_input == 'y':
-                print(colored('remove contents of directory %s' % log_dir, 'red'))
-                os.system('rm -r %s/*' % log_dir)
-            else:
-                print(colored('exit from the training.', 'red'))
-                exit(0)
+            # os.system('rm -r %s/*' % log_dir)
+            pass
+            # user_input = input(f"log dir \"{log_dir}\" exists. \nRemove? (y/n):")
+            # if user_input == 'y':
+            #     print(colored('remove contents of directory %s' % log_dir, 'red'))
+            #     os.system('rm -r %s/*' % log_dir)
+            # else:
+            #     print(colored('exit from the training.', 'red'))
+            #     exit(0)
 
         if not os.path.exists(log_dir):
             os.makedirs(cfg.logdir, exist_ok=True)
